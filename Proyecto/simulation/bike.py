@@ -39,11 +39,8 @@ class Bike:
             self.node.refreshContext(self.__dict__)
             self.node.funciones[0].eval([], self.node.nuevocontext)
             evaluation = self.node.nuevocontext.variables["tires"].value
-            if evaluation <= 4:
-                self.tires = Tires(evaluation)
-            else:
-                evaluation = 4
-                self.tires = Tires(evaluation)
+            evaluation = min(evaluation, 4)
+            self.tires = Tires(evaluation)
 
     def change_tires(self, tires: Tires):
         self.tires = tires

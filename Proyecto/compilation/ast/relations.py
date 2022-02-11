@@ -36,10 +36,7 @@ class EqRel(Rel):
         if isinstance(exprND, RuntimeError):
             return exprND
 
-        if exprNI == exprND:
-            return True
-        else:
-            return False
+        return exprNI == exprND
 
     @staticmethod
     def type() -> str:
@@ -58,10 +55,7 @@ class NeqRel(Rel):
         if isinstance(exprND, RuntimeError):
             return exprND
 
-        if exprNI != exprND:
-            return True
-        else:
-            return False
+        return exprNI != exprND
 
     @staticmethod
     def type() -> str:
@@ -80,10 +74,7 @@ class LessRel(Rel):
         if isinstance(exprND, RuntimeError):
             return exprND
 
-        if exprNI < exprND:
-            return True
-        else:
-            return False
+        return exprNI < exprND
 
     @staticmethod
     def type() -> str:
@@ -102,10 +93,7 @@ class LeqRel(Rel):
         if isinstance(exprND, RuntimeError):
             return exprND
 
-        if exprNI <= exprND:
-            return True
-        else:
-            return False
+        return exprNI <= exprND
 
     @staticmethod
     def type() -> str:
@@ -124,10 +112,7 @@ class GreatRel(Rel):
         if isinstance(exprND, RuntimeError):
             return exprND
 
-        if exprNI > exprND:
-            return True
-        else:
-            return False
+        return exprNI > exprND
 
     @staticmethod
     def type() -> str:
@@ -146,10 +131,7 @@ class GreqRel(Rel):
         if isinstance(exprND, RuntimeError):
             return exprND
 
-        if exprNI >= exprND:
-            return True
-        else:
-            return False
+        return exprNI >= exprND
 
     @staticmethod
     def type() -> str:

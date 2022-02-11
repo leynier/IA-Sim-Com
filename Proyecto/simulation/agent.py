@@ -543,18 +543,14 @@ class Agent:
                 evaluation = 11
             else:
                 evaluation = function.eval([], self.node.nuevocontext)
-            if evaluation > 11:
-                return AgentActions(11)
-            else:
-                return AgentActions(evaluation)
+            return AgentActions(11) if evaluation > 11 else AgentActions(evaluation)
 
     def select_acceleration(self, section, race, weather, action):
         if not self.flag_acceleration:
             max_acceleration = self.calc_max_acceleration(min(self.bike.max_speed, section[2]), section[1])
             self.acceleration = acceleration(max_acceleration, weather, section, self.bike, self.rider)
-            if self.acceleration < 0:
-                if action.name.__contains__("SpeedUp"):
-                    self.acceleration = 0
+            if self.acceleration < 0 and action.name.__contains__("SpeedUp"):
+                self.acceleration = 0
             #if action == AgentActions.Brake:
             #    self.acceleration *= -1 #) * self.bike.acceleration / race.discrete_variable_generator()
             #else:
@@ -582,14 +578,14 @@ class Agent:
             return False
 
         if section[4] == TrackType.Straight:
-            if action.value == 3 or action.value == 4 or action.value == 5 or action.value == 9 or action.value == 10 or action.value == 11:
+            if action.value in [3, 4, 5, 9, 10, 11]:
                 print("El piloto {} ha doblado en plena recta y se ha ido al suelo".format(self.rider.name))
                 return False
         elif section[4] == TrackType.Curve:
-            if action.value != 3 and action.value != 4 and action.value != 5 and action.value != 9 and action.value != 10 and action.value != 11:
+            if action.value not in [3, 4, 5, 9, 10, 11]:
                 print("El piloto {} ha seguido de largo y no ha doblado, ha roto la moto en la grava.".format(self.rider.name))
                 return False
-        
+
         if self.rider.probability_of_falling_off_the_bike > prob:
             print("El piloto {} ha perdido el control de su moto y se ha ido al suelo".format(self.rider.name))
             return False
@@ -626,10 +622,7 @@ class Agent:
     def calc_final_speed(self, max_speed):
         y = self.speed
         vf = pow(self.speed, 2) + 2 * max_speed * self.acceleration
-        if vf >= 0:
-            vf = sqrt(vf)
-        else:
-            vf = 0
+        vf = sqrt(vf) if vf >= 0 else 0
         if self.acceleration != 0:
             t = (vf - self.speed) / self.acceleration
             self.time_lap += t

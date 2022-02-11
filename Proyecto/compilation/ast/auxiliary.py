@@ -9,7 +9,7 @@ from compilation.errors import CheckTypesError
 class NodeE(Node):
     def __init__(self):
         self.padre = None
-        self.hijos = list()
+        self.hijos = []
         self.ast = None
 
     def refreshAST(self):
@@ -29,7 +29,7 @@ class NodeE(Node):
 class NodeB(Node):
     def __init__(self):
         self.padre = None
-        self.hijos = list()
+        self.hijos = []
         self.ast = None
 
     def refreshAST(self):
@@ -48,7 +48,7 @@ class NodeB(Node):
 class NodeX(Node):
     def __init__(self):
         self.padre = None
-        self.hijos = list()
+        self.hijos = []
         self.ast = None
 
     def refreshAST(self):
@@ -65,7 +65,7 @@ class NodeX(Node):
 class NodeM(Node):
     def __init__(self):
         self.padre = None
-        self.hijos = list()
+        self.hijos = []
         self.ast = None
         self.aux = None
 
@@ -93,7 +93,7 @@ class NodeY:
     def __init__(self):
         self.ast = None
         self.padre = None
-        self.hijos = list()
+        self.hijos = []
 
     def refreshAST(self):
         if len(self.hijos) == 3:
@@ -109,7 +109,7 @@ class NodeY:
 class NodeQ(Node):
     def __init__(self):
         self.padre = None
-        self.hijos = list()
+        self.hijos = []
         self.ast = None
 
     def refreshAST(self):
@@ -141,18 +141,18 @@ class Val(Node):  # @@
         if self.val.token_type == TokenType.T_D_VALUE:
             self.type = 4.5
             return "double"
-        if self.val.token_type == TokenType.T_FALSE or self.val.token_type == TokenType.T_TRUE:
-            if self.val.token_type == TokenType.T_FALSE:
-                self.type = False
-            else:
-                self.type = True
+        if self.val.token_type == TokenType.T_FALSE:
+            self.type = False
+            return "bool"
+        elif self.val.token_type == TokenType.T_TRUE:
+            self.type = True
             return "bool"
         if self.val.token_type == TokenType.T_S_VALUE:
             self.type = "DD"
             return "str"
 
     def eval(self, context: Context):
-        if self.type == True or self.type == False:
+        if self.type in [True, False]:
             return self.type
         else:
             return (type(self.type))(self.val.value)
@@ -206,17 +206,15 @@ class FunCall(Node):
         return context.check_fun(self.id, len(self.args), self.token)
 
     def checktype(self, context: Context):
-        index = 0
         definitionfuncion = context.getFunction(self.id)
         keys = list(definitionfuncion.nuevocontext.variables.keys())
-        for arg in self.args:
+        for index, arg in enumerate(self.args):
             typeExp = arg.checktype(context)
             if isinstance(typeExp, CheckTypesError):
                 return typeExp
             if typeExp != normaliza(definitionfuncion.nuevocontext.variables[keys[index]].typevar):
                 return CheckTypesError("the parameter entered is not of the expected type", "", self.token.line,
                                        self.token.column)  ##Anadir error (el parametro ingresado no es del tipo esperado)
-            index += 1
         type_ = context.gettypefun(self.id)
         if type_ == MethodType.INT:
             return "int"

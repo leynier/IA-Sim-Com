@@ -93,7 +93,7 @@ class Parser:
                            TokenType.T_BIKE]
         self.no_terminales = ["L", "D", "I", "E", "M", "Y", "J", "U", "N", "@", "R", "K", "T", "P", "W", "S", "F",
                               "A", "Z", "Q", "C", "B", "G", "X", "~", "^", "H", "O", "V"]
-        self.first = dict()  # Guardamos los terminales que pertenecen al First de cada produccion posible de nuestra gramatica
+        self.first = {}
         self.follow = {"L": [], "D": [], "I": [], "E": [], "M": [], "Y": [], "J": [], "U": [], "N": [], "@": [],
                        "R": [], "K": [], "T": [], "P": [], "W": [], "S": [], "F": [], "A": [], "Z": [],
                        "Q": [], "C": [], "B": [], "G": [], "X": [], "~": [],
@@ -199,24 +199,24 @@ class Parser:
 
     @staticmethod
     def key(produccion: list) -> str:
-        prod_str = ""
-        for i in range(len(produccion)):
-            prod_str += "'" + produccion[i].name + "'" if isinstance(produccion[i], TokenType) else produccion[i]
-        return prod_str
+        return "".join(
+            "'" + item.name + "'" if isinstance(item, TokenType) else item
+            for item in produccion
+        )
 
     def se_va_en_epsilon(self, no_terminal) -> bool:
         if self.no_terminales.count(no_terminal) != 1:
             return no_terminal == "e"
-        else:
-            for prod in self.producciones[no_terminal]:
-                i = 0
-                while i < len(prod):
-                    if not self.se_va_en_epsilon(prod[i]):
-                        break
-                    i += 1
-                if i == len(prod):
-                    return True
-            return False
+
+        for prod in self.producciones[no_terminal]:
+            i = 0
+            while i < len(prod):
+                if not self.se_va_en_epsilon(prod[i]):
+                    break
+                i += 1
+            if i == len(prod):
+                return True
+        return False
 
     def calcular_first_restantes(self):
         for nt in self.no_terminales:
@@ -224,27 +224,31 @@ class Parser:
                 self.hacer_first(nt)
 
     def hacer_follow(self):
-        terminales_para_follow = list()  # Aqui voy teniendo los posibles terminales que pueden pertenecer al follow de los no terminales que voy revisando
+        terminales_para_follow = []
         for prod in self.lista_producciones:
             terminales_para_follow.clear()
             existe_ultimo_terminal = True  # Esta variable es para identificar los casos en que lo ultimo que me queda en mi produccion pueda ser un No terminal y por lo tanto el Follow de la cabeza de la produccion sera subconjunyto del Follow del no terminal
             for i in range(len(prod) - 1, 0, -1):
                 if self.no_terminales.count(prod[i]) == 1:
-                    if len(terminales_para_follow) > 0:
+                    if terminales_para_follow:
                         self.follow[prod[i]] = list(set(self.follow[prod[i]] + terminales_para_follow))
-                    if existe_ultimo_terminal:
-                        if prod[0] != prod[i] and self.pendiente_follow.count("{},{}".format(prod[0], prod[i])) == 0:
-                            self.pendiente_follow.append("{},{}".format(prod[0], prod[i]))
+                    if (
+                        existe_ultimo_terminal
+                        and prod[0] != prod[i]
+                        and self.pendiente_follow.count(
+                            "{},{}".format(prod[0], prod[i])
+                        )
+                        == 0
+                    ):
+                        self.pendiente_follow.append("{},{}".format(prod[0], prod[i]))
                     if self.se_va_en_epsilon(prod[i]):
                         terminales_para_follow += self.first[prod[i]]
-                        if terminales_para_follow.count(prod[i]) == 1:
-                            terminales_para_follow.remove("e")
                     else:
                         terminales_para_follow.clear()
                         terminales_para_follow += self.first[prod[i]]
-                        if terminales_para_follow.count(prod[i]) == 1:
-                            terminales_para_follow.remove("e")
                         existe_ultimo_terminal = False
+                    if terminales_para_follow.count(prod[i]) == 1:
+                        terminales_para_follow.remove("e")
                 else:
                     existe_ultimo_terminal = False
                     terminales_para_follow.clear()
@@ -264,10 +268,8 @@ class Parser:
             self.AjustaFollows(follow[0], follow[2])
 
     def construir_tabla_LL(self):
-        fila = 0
-        for nt in self.no_terminales:
-            columna = 0
-            for t in self.terminales:
+        for fila, nt in enumerate(self.no_terminales):
+            for columna, t in enumerate(self.terminales):
                 if t != "e":
                     for i in range(len(self.producciones[nt])):
                         esta = self.first.get(self.key(self.producciones[nt][i]), "NoEsta")
@@ -276,8 +278,6 @@ class Parser:
                             break
                 if self.follow[nt].count(t) > 0 and self.se_va_en_epsilon(nt) and self.matriz[fila][columna] is None:
                     self.matriz[fila][columna] = "e"
-                columna += 1
-            fila += 1
 
     def parsear(self, line, cadena):
         self.error = None

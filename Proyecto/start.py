@@ -17,7 +17,7 @@ def print_welcome():
 
 
 def clear_console():
-    if name == "ce" or name == "nt" or name == "dos":
+    if name in ["ce", "nt", "dos"]:
         system("cls")
     elif name == "posix":
         system("clear")

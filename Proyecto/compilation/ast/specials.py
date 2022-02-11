@@ -73,7 +73,10 @@ class TypeSpecial(Statement):
                     return IncorrectCallError("in this context they can only be redefined with the equal operator", "",
                                               self.token.line, self.token.column)
                 keys = list(self.nuevocontext.variables.keys())
-                if keys.count(var.id) == 0 or (var.id != "cornering" and var.id != "step_by_line"):
+                if keys.count(var.id) == 0 or var.id not in [
+                    "cornering",
+                    "step_by_line",
+                ]:
                     return IncorrectCallError(
                         "only cornering variables and step_by_line belonging to the type can be redefined", "",
                         self.token.line, self.token.column)
@@ -83,10 +86,9 @@ class TypeSpecial(Statement):
                     validationexpr.line = self.token.line
                     validationexpr.column = self.token.column
                     return validationexpr
-        else:
-            if len(self.variables) > 0:
-                return IncorrectCallError("within a bike type you can not redefine variables", "", self.token.line,
-                                          self.token.column)
+        elif len(self.variables) > 0:
+            return IncorrectCallError("within a bike type you can not redefine variables", "", self.token.line,
+                                      self.token.column)
         # Hay que agregarle las variables de las motos o los pilotos
         for function in self.funciones:
             if isinstance(self, BikeNode):
@@ -117,9 +119,14 @@ class TypeSpecial(Statement):
             if isinstance(checking, CheckTypesError):
                 return checking
         for function in self.funciones:
-            if ((function.idfun == "select_configuration" or function.idfun == "select_acceleration") and normaliza(
-                    function.typefun) != "void") or (
-                    function.idfun == "select_action" and normaliza(function.typefun) != "int"):
+            if (
+                function.idfun in ["select_configuration", "select_acceleration"]
+                and normaliza(function.typefun) != "void"
+                or (
+                    function.idfun == "select_action"
+                    and normaliza(function.typefun) != "int"
+                )
+            ):
                 return CheckTypesError("error in the return value of the function", "", self.token.line,
                                        self.token.column)
             checktypefunction = function.checktype(context)

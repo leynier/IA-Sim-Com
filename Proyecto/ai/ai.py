@@ -28,13 +28,17 @@ def edit_moto(environment):
         direction = 3
     else:
         direction = 2
-    facts = open("ai/moto_facts.kfb", "w+")
-    facts.write("# moto_facts.kfb\n\n")
-    facts.write("rainy({})\n".format(True if weather.weather_status.name.__contains__("Rainy") else False))
-    facts.write("humidity({})\n".format(True if weather.humidity > 6 else False))
-    facts.write("windy({})\n".format(True if weather.wind_intensity > 6 else False))
-    facts.write("wind_direction({})\n".format(direction))
-    facts.close()
+    with open("ai/moto_facts.kfb", "w+") as facts:
+        facts.write("# moto_facts.kfb\n\n")
+        facts.write(
+            "rainy({})\n".format(
+                bool(weather.weather_status.name.__contains__("Rainy"))
+            )
+        )
+
+        facts.write("humidity({})\n".format(weather.humidity > 6))
+        facts.write("windy({})\n".format(weather.wind_intensity > 6))
+        facts.write("wind_direction({})\n".format(direction))
 
 
 def moto():
@@ -64,28 +68,31 @@ def restart(rules: str):
 
 
 def edit_action(speed, bike_max_speed, section_max_speed, section_type, tires, weather):
-    facts = open("ai/action_facts.kfb", "w")
-    facts.write("# action_facts.kfb\n\n")
-    if speed > bike_max_speed or speed > section_max_speed:
-        speed_cmp = 1
-    elif speed < bike_max_speed and speed < section_max_speed:
-        speed_cmp = 3
-    else:
-        speed_cmp = 2
-    facts.write("speed({})\n".format(speed_cmp))
-    facts.write("curve({})\n".format(True if section_type == "Curve" else False))
-    facts.write("tires({})\n".format(True if tires.__contains__("Slick") else False))
-    facts.write("rainy({})\n".format(True if weather.weather_status.name.__contains__("Rainy") else False))
-    facts.write("humidity({})\n".format(True if weather.humidity > 6 else False))
-    facts.close()
+    with open("ai/action_facts.kfb", "w") as facts:
+        facts.write("# action_facts.kfb\n\n")
+        if speed > bike_max_speed or speed > section_max_speed:
+            speed_cmp = 1
+        elif speed < bike_max_speed and speed < section_max_speed:
+            speed_cmp = 3
+        else:
+            speed_cmp = 2
+        facts.write("speed({})\n".format(speed_cmp))
+        facts.write("curve({})\n".format(section_type == "Curve"))
+        facts.write("tires({})\n".format(bool(tires.__contains__("Slick"))))
+        facts.write(
+            "rainy({})\n".format(
+                bool(weather.weather_status.name.__contains__("Rainy"))
+            )
+        )
+
+        facts.write("humidity({})\n".format(weather.humidity > 6))
 
 
 def action():
     engine = restart("bc_action_rules")
     actions = []
     with engine.prove_goal("bc_action_rules.select_action($select)") as gen:
-        for ans, plan in gen:
-            actions.append(int(ans["select"]))
+        actions.extend(int(ans["select"]) for ans, plan in gen)
     print(sum(actions))
 
 

@@ -39,10 +39,8 @@ class Race:
             return False
 
     def print_ranking(self):
-        i = 1
-        for x in self.rank:
+        for i, x in enumerate(self.rank, start=1):
             print("{}: {}".format(i, x.rider.name))
-            i += 1
         print()
 
     def ranking(self):

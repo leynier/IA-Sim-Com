@@ -8,12 +8,12 @@ def is_error(value: Error) -> bool:
 
 
 def numbertype(type_):
-    if type_ == "int" or type_ == "double":
+    if type_ in ["int", "double"]:
         return True
 
 
 def is_number(value) -> bool:
-    return isinstance(value, int) or isinstance(value, float)
+    return isinstance(value, (int, float))
 
 
 def is_bool(value: bool) -> bool:
@@ -61,17 +61,13 @@ class BinOp(Op):  # @@
             return typeLeft
         if isinstance(typeRight, CheckTypesError):
             return typeRight
-        if numbertype(typeLeft) and numbertype(typeRight):
-            if typeLeft == typeRight:
-                if typeLeft == "int":
-                    return "int"
-                else:
-                    return "double"
-            else:
-                return "double"
-        else:
+        if not numbertype(typeLeft) or not numbertype(typeRight):
             return CheckTypesError("You cannot operate arithmetically with tokens that are not of type number", "",
                                    self.token.line, self.token.column)
+        if typeLeft == typeRight and typeLeft == "int":
+            return "int"
+        else:
+            return "double"
 
     def __repr__(self) -> str:
         return "{}({}, {})".format(self.type(), self.left_node, self.right_node)

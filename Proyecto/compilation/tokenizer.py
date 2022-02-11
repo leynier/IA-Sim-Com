@@ -47,7 +47,7 @@ class Tokenizer:
         open_braces = 0
         while self.f_pointer < len(self.input_text) and self.error is None:
             current = self.input_text[self.f_pointer]
-            if current == ' ' or current == '\t':
+            if current in [' ', '\t']:
                 pass
             elif current == '\n':
                 self.line += 1
@@ -77,24 +77,28 @@ class Tokenizer:
             elif current == '}':
                 open_braces -= 1
                 self.tokens.append(Token(TokenType.T_CLOSE_BRACE, self.line, self.column))
-            elif current == '#' or current == '\"':
+            elif current in ['#', '\"']:
                 self.comment_string(current)
             elif current.isnumeric():
                 self.number(file)
             elif current.isalpha() or current == "_":
                 self.alpha()
+            elif (
+                not (op := self.operators.get(current))
+                and current not in ["&", "|"]
+                and (pct := self.punctuators.get(current))
+            ):
+                self.tokens.append(Token(pct, self.line, self.column))
+            elif (
+                not (op := self.operators.get(current))
+                and current not in ["&", "|"]
+                and not (pct := self.punctuators.get(current))
+            ):
+                self.tokens = []
+                self.error = UnknownCharacterError(current, file, self.line, self.column)
+                break
             else:
-                op = self.operators.get(current)
-                if op or current in ["&", "|"]:
-                    self.operator(current, op)
-                else:
-                    pct = self.punctuators.get(current)
-                    if pct:
-                        self.tokens.append(Token(pct, self.line, self.column))
-                    else:
-                        self.tokens = []
-                        self.error = UnknownCharacterError(current, file, self.line, self.column)
-                        break
+                self.operator(current, op)
             self.f_pointer += 1
             self.column += self.f_pointer - self.s_pointer
             self.s_pointer = self.f_pointer
@@ -142,8 +146,7 @@ class Tokenizer:
                                                          or self.input_text[self.f_pointer] == "_"):
             token += self.input_text[self.f_pointer]
             self.f_pointer += 1
-        keyword = self.keywords.get(token)
-        if keyword:
+        if keyword := self.keywords.get(token):
             self.tokens.append(Token(keyword, self.line, self.column))
         else:
             self.tokens.append(Token(TokenType.T_ID, self.line, self.column, token))

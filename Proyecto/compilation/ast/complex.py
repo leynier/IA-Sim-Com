@@ -9,20 +9,19 @@ def verificatealwaysReturn(dec):
     for statement in dec.body.statements:
         if isinstance(statement, ReturnNode):
             if dec.nodoelse is None:
-                if isinstance(dec, Program):
-                    return True
-                else:
-                    return False
+                return isinstance(dec, Program)
             elif isinstance(dec.nodoelse, IfCond):
                 if verificatealwaysReturn(dec.nodoelse):
                     return True
             elif isinstance(dec.nodoelse, Program):
                 for statementdprogram in dec.nodoelse.statements:
-                    if isinstance(statementdprogram, ReturnNode):
+                    if (
+                        not isinstance(statementdprogram, ReturnNode)
+                        and isinstance(statementdprogram, IfCond)
+                        and verificatealwaysReturn(statementdprogram)
+                        or isinstance(statementdprogram, ReturnNode)
+                    ):
                         return True
-                    elif isinstance(statementdprogram, IfCond):
-                        if verificatealwaysReturn(statementdprogram):
-                            return True
         elif isinstance(statement, IfCond):
             if verificatealwaysReturn(statement):
                 return True
@@ -40,11 +39,8 @@ class Program(Node):
     def validate(self, context: Context):
         if isinstance(self.padre, WhileCond):
             for statement in self.statements:
-                if isinstance(statement, Def_Fun):
+                if isinstance(statement, (Def_Fun, RiderNode, BikeNode)):
                     return False  # Error ,No puede definir una funcion dentro de un while
-                elif isinstance(statement, RiderNode) or isinstance(statement, BikeNode):
-                    return False  # Error ,No puede definir un tipo especial dentro de un while
-                    # if isinstance(statement,Redefinition) or isinstance(statement,D_Assign) or isinstance(statement,WhileCond) or isinstance(statement,IfCond) or isinstance(statement,FunCall):  #estas son las declaraciones que pueden estar en cualquier ambito
                 validationstatement = statement.validate(context)
                 if not isinstance(validationstatement, bool):
                     return validationstatement
@@ -52,9 +48,12 @@ class Program(Node):
             for statement in self.statements:
                 if isinstance(statement, Def_Fun):
                     return False  # Error ,No puede definir una funcion dentro de un If
-                elif isinstance(statement, RiderNode) or isinstance(statement, BikeNode):
+                elif isinstance(statement, (RiderNode, BikeNode)):
                     return False  # Error ,No puede definir un tipo especial dentro de un if
-                elif isinstance(statement, ReturnNode) and (statement.type == "continue" or statement.type == "break"):
+                elif isinstance(statement, ReturnNode) and statement.type in [
+                    "continue",
+                    "break",
+                ]:
                     if context.enwhile is None:
                         return IncorrectCallError("This token is incorrect, it is not within a while scope", "",
                                                   self.token.line, self.token.column)
@@ -69,9 +68,12 @@ class Program(Node):
             for statement in self.statements:
                 if isinstance(statement, Def_Fun):
                     return False  # Error ,No puede definir una funcion dentro de una funcion
-                elif isinstance(statement, RiderNode) or isinstance(statement, BikeNode):
+                elif isinstance(statement, (RiderNode, BikeNode)):
                     return False  # Error ,No puede definir un tipo especial dentro de una funcion
-                elif isinstance(statement, ReturnNode) and (statement.type == "continue" or statement.type == "break"):
+                elif isinstance(statement, ReturnNode) and statement.type in [
+                    "continue",
+                    "break",
+                ]:
                     return False  # Error ,Esta declaracion no es valida dentro de una funcion
                 else:
                     if isinstance(statement, ReturnNode):
@@ -91,34 +93,34 @@ class Program(Node):
                 if verificatealwaysReturn(dec_if):
                     aseguraretorno = True
             if normaliza(self.padre.typefun) != "void":
-                if aseguraretorno:
-                    return aseguraretorno  # No se asegura que se retorne  , Error
-                else:
-                    return IncorrectCallError(" Not all code paths return a value	", "", self.token.line,
-                                              self.token.column)
-        else:
-            if self.padre is None:
-                for statement in self.statements:
+                return aseguraretorno or IncorrectCallError(
+                    " Not all code paths return a value	",
+                    "",
+                    self.token.line,
+                    self.token.column,
+                )
 
+        else:
+            for statement in self.statements:
+
+                if self.padre is None:
                     if isinstance(statement, ReturnNode):
                         return False  # Error ,Esta declaracion no es valida
-                    validationstatement = statement.validate(context)
-                    if not isinstance(validationstatement, bool):
-                        return validationstatement
-            else:
-                for statement in self.statements:
-                    if isinstance(statement, Def_Fun):
-                        return False  # Error ,No puede definir una funcion en este ambito
-                    elif isinstance(statement, RiderNode) or isinstance(statement, BikeNode):
-                        return False  # Error ,No puede definir un tipo especial en este ambito
-                    elif isinstance(statement, ReturnNode):
-                        if (statement.type == "continue" or statement.type == "break") and context.enwhile is None:
-                            return IncorrectCallError("This token is incorrect, it is not within a while scope", "",
-                                                      self.token.line, self.token.column)
+                elif isinstance(statement, Def_Fun):
+                    return False  # Error ,No puede definir una funcion en este ambito
+                elif isinstance(statement, (RiderNode, BikeNode)):
+                    return False  # Error ,No puede definir un tipo especial en este ambito
+                elif isinstance(statement, ReturnNode):
+                    if (
+                        statement.type in ["continue", "break"]
+                        and context.enwhile is None
+                    ):
+                        return IncorrectCallError("This token is incorrect, it is not within a while scope", "",
+                                                  self.token.line, self.token.column)
 
-                    validationstatement = statement.validate(context)
-                    if not isinstance(validationstatement, bool):
-                        return validationstatement
+                validationstatement = statement.validate(context)
+                if not isinstance(validationstatement, bool):
+                    return validationstatement
         return True
 
     def checktype(self, context: Context):
@@ -136,15 +138,19 @@ class Program(Node):
                     if isinstance(evaluation, RuntimeError):
                         return evaluation
                     if evaluation is not None:
-                        if evaluation == "break" or evaluation == "continue":
-                            return evaluation
-                        elif evaluation != "Nothing":
-                            return evaluation
+                        if (
+                            evaluation not in ["break", "continue"]
+                            and evaluation == "Nothing"
+                            and isinstance(self.padre, Def_Fun)
+                        ):
+                            return
+                        elif (
+                            evaluation not in ["break", "continue"]
+                            and evaluation == "Nothing"
+                        ):
+                            return "Nothing"
                         else:
-                            if isinstance(self.padre, Def_Fun):
-                                return
-                            else:
-                                return "Nothing"
+                            return evaluation
                 elif statement.type == "break":
                     return "break"
                 elif statement.type == "continue":
@@ -152,15 +158,17 @@ class Program(Node):
                 else:
                     if statement.expr.noderaiz.ast is not None:
                         return statement.expr.eval(context)
+                    if isinstance(self.padre, Def_Fun):
+                        return
                     else:
-                        if isinstance(self.padre, Def_Fun):
-                            return
-                        else:
-                            return "Nothing"
-        if self.padre is not None:
-            if isinstance(self.padre, Def_Fun):
-                if not isinstance(self.padre.padre, RiderNode) and not isinstance(self.padre.padre, BikeNode):
-                    context.clear()
+                        return "Nothing"
+        if (
+            self.padre is not None
+            and isinstance(self.padre, Def_Fun)
+            and not isinstance(self.padre.padre, RiderNode)
+            and not isinstance(self.padre.padre, BikeNode)
+        ):
+            context.clear()
 
     @staticmethod
     def type() -> str:
@@ -176,7 +184,7 @@ class ReturnNode(Statement):
 
     def validate(self, context: Context):
 
-        if self.type == "continue" or self.type == "break":
+        if self.type in ["continue", "break"]:
             return True
 
         if context.enfuncion is None:
@@ -202,7 +210,7 @@ class ReturnNode(Statement):
         return True
 
     def checktype(self, context: Context):
-        if self.type == "continue" or self.type == "break":
+        if self.type in ["continue", "break"]:
             return True
 
         elif normaliza(context.enfuncion.typefun) != "void":
@@ -262,11 +270,11 @@ class Def_Fun(Statement):
         self.token = None
 
     def validate(self, context: Context) -> bool:
-        if not isinstance(self.padre, RiderNode) and not isinstance(self.padre, BikeNode):
-            self.nuevocontext = context.crearnuevocontexto()
-        else:
+        if isinstance(self.padre, (RiderNode, BikeNode)):
             self.nuevocontext = context
 
+        else:
+            self.nuevocontext = context.crearnuevocontexto()
         validationfun = context.define_fun(self.idfun, self, self.token)
         if not isinstance(validationfun, bool):
             return validationfun
@@ -313,26 +321,20 @@ class Def_Fun(Statement):
 
             contextopararecursividad.contextPadre = self.nuevocontext.contextPadre
 
-            index = 0
-            for arg in args:
+            for index, arg in enumerate(args):
                 evalexpression = arg.eval(context)
-                if not isinstance(evalexpression, RuntimeError):
-                    contextopararecursividad.variables[keys[index]].value = evalexpression
-                    index += 1
-                else:
+                if isinstance(evalexpression, RuntimeError):
                     return evalexpression
 
+                contextopararecursividad.variables[keys[index]].value = evalexpression
             return self.body.eval(contextopararecursividad)
 
-        index = 0
-        for arg in args:
+        for index, arg in enumerate(args):
             evalexpression = arg.eval(context)
-            if not isinstance(evalexpression, RuntimeError):
-                self.nuevocontext.variables[keys[index]].value = evalexpression
-                index += 1
-            else:
+            if isinstance(evalexpression, RuntimeError):
                 return evalexpression
 
+            self.nuevocontext.variables[keys[index]].value = evalexpression
         return self.body.eval(self.nuevocontext)
 
     @staticmethod
@@ -362,21 +364,19 @@ class Condition(Node):
         if self.expression2.nododreconocimiento.ast is None:
             if isinstance(checkExpr1, CheckTypesError):
                 return checkExpr1
+            if checkExpr1=="bool":                 
+              return True
             else:
-                if checkExpr1=="bool":                 
-                  return True
-                else:
-                    return CheckTypesError("there is a condition that is not of the Boolean type", "",
-                                   self.token.line, self.token.column)
+                return CheckTypesError("there is a condition that is not of the Boolean type", "",
+                               self.token.line, self.token.column)
         else:
             checktypecomp = self.comparador.checktype(context)
-            if isinstance(checktypecomp, CheckTypesError):
-                if checktypecomp.line == -1:
-                    checktypecomp.line = self.token.line
-                    checktypecomp.column = self.token.column
-                return checktypecomp
-            else:
+            if not isinstance(checktypecomp, CheckTypesError):
                 return True
+            if checktypecomp.line == -1:
+                checktypecomp.line = self.token.line
+                checktypecomp.column = self.token.column
+            return checktypecomp
             # checkExpr2=self.expression2.checktype(context)
             # if isinstance(checkExpr2,CheckTypesError):
             # return checkExpr2

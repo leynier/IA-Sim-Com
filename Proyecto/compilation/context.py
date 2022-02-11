@@ -26,70 +26,71 @@ class Context:
         funContain = self.funciones.get(id_, "NoEsta")
         if funContain != "NoEsta":
             return funContain
-        else:
-            context = self.contextPadre
-            while context is not None:
-                funContain = context.funciones.get(id_, "NoEsta")
-                if funContain != "NoEsta":
-                    return funContain
-                context = context.contextPadre
+        context = self.contextPadre
+        while context is not None:
+            funContain = context.funciones.get(id_, "NoEsta")
+            if funContain != "NoEsta":
+                return funContain
+            context = context.contextPadre
 
     def getvalueAttribute(self, var, token):
         if self.variables.get(var, "NoEsta") != "NoEsta":
-            if self.variables[var].value is not None:
-                return self.variables[var].value
-            else:
-                return RuntimeError("local variable {} referenced before assignment".format(var), "", token.line,
-                                    token.column)
-        else:
-            context = self.contextPadre
-            while context is not None:
-                if context.variables.get(var, "NoEsta") != "NoEsta":
-                    retorno = context.variables[var].value
-                    if retorno is not None:
-                        return retorno
-                    else:
-                        return RuntimeError("local variable {} referenced before assignment".format(var), "",
-                                            token.line, token.column)
-                context = context.padre
+            return (
+                self.variables[var].value
+                if self.variables[var].value is not None
+                else RuntimeError(
+                    "local variable {} referenced before assignment".format(var),
+                    "",
+                    token.line,
+                    token.column,
+                )
+            )
+
+        context = self.contextPadre
+        while context is not None:
+            if context.variables.get(var, "NoEsta") != "NoEsta":
+                retorno = context.variables[var].value
+                if retorno is not None:
+                    return retorno
+                else:
+                    return RuntimeError("local variable {} referenced before assignment".format(var), "",
+                                        token.line, token.column)
+            context = context.padre
 
     def gettypefun(self, idfun):
         Esta = self.funciones.get(idfun, "NoEsta")
         if Esta != "NoEsta":
             return self.funciones[idfun].typefun
-        else:
-            context = self.contextPadre
-            while context is not None:
-                funContain = context.funciones.get(idfun, "NoEsta")
-                if funContain != "NoEsta":
-                    return context.funciones[idfun].typefun
-                context = context.contextPadre
+        context = self.contextPadre
+        while context is not None:
+            funContain = context.funciones.get(idfun, "NoEsta")
+            if funContain != "NoEsta":
+                return context.funciones[idfun].typefun
+            context = context.contextPadre
 
     def gettypevar(self, idvar: str):
         Esta = self.variables.get(idvar, "NoEsta")
         if Esta != "NoEsta":
             return self.variables[idvar].typevar
-        else:
-            context = self.contextPadre
-            while context is not None:
-                varContain = context.variables.get(idvar, "NoEsta")
-                if varContain != "NoEsta":
-                    return context.variables[idvar].typevar
-                context = context.contextPadre
+        context = self.contextPadre
+        while context is not None:
+            varContain = context.variables.get(idvar, "NoEsta")
+            if varContain != "NoEsta":
+                return context.variables[idvar].typevar
+            context = context.contextPadre
 
     def check_var(self, var: str, token: Token):
         varContain = self.variables.get(var, "NoEsta")
         if varContain != "NoEsta":
             return True
-        else:
-            context = self.contextPadre
-            while context is not None:
-                varContain = context.variables.get(var, "NoEsta")
-                if varContain != "NoEsta":
-                    return True
-                context = context.contextPadre
-            return IncorrectCallError("there is no variable with this name accessible from this scope", "", token.line,
-                                      token.column)
+        context = self.contextPadre
+        while context is not None:
+            varContain = context.variables.get(var, "NoEsta")
+            if varContain != "NoEsta":
+                return True
+            context = context.contextPadre
+        return IncorrectCallError("there is no variable with this name accessible from this scope", "", token.line,
+                                  token.column)
 
     def check_fun(self, fun: str, args: int, token: Token):
         funContain = self.funciones.get(fun, "NoEsta")

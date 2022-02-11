@@ -12,13 +12,13 @@ class NodeType(Enum):
 
 
 def normaliza(typevar):
-    if typevar == VariableType.INT or typevar == MethodType.INT:
+    if typevar in [VariableType.INT, MethodType.INT]:
         return "int"
-    if typevar == VariableType.BOOL or typevar == MethodType.BOOL:
+    if typevar in [VariableType.BOOL, MethodType.BOOL]:
         return "bool"
-    if typevar == VariableType.DOUBLE or typevar == MethodType.DOUBLE:
+    if typevar in [VariableType.DOUBLE, MethodType.DOUBLE]:
         return "double"
-    if typevar == VariableType.STRING or typevar == MethodType.STRING:
+    if typevar in [VariableType.STRING, MethodType.STRING]:
         return "str"
     if typevar == MethodType.VOID:
         return "void"

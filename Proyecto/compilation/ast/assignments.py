@@ -54,7 +54,7 @@ class OpAs(Assign):
                 return CheckTypesError("the induced type of the expression is different from the type of the variable",
                                        "", self.token.line, self.token.column)
         elif normaliza(context.gettypevar(self.node_id)) == "double":
-            if checkexpr == "int" or checkexpr == "double":
+            if checkexpr in ["int", "double"]:
                 return True
             else:
                 return CheckTypesError("The induced type of the expression is not a number", "", self.token.line,
@@ -199,15 +199,13 @@ class ExpAs(ArAs):
             checkexpr.line = self.token.line
             checkexpr.column = self.token.column
             return checkexpr
-        if normaliza(context.gettypevar(self.node_id)) == "int" or normaliza(
-                context.gettypevar(self.node_id)) == "double":
-            if checkexpr == "int":
-                return True
-            else:
-                return CheckTypesError("the exponent must be an integer", "", self.token.line, self.token.column)
-        else:
+        if normaliza(context.gettypevar(self.node_id)) not in ["int", "double"]:
             return CheckTypesError("incorrect variable type for power operation", "", self.token.line,
                                    self.token.column)
+        if checkexpr == "int":
+            return True
+        else:
+            return CheckTypesError("the exponent must be an integer", "", self.token.line, self.token.column)
 
     def eval(self, context: Context):
         if context.variables[self.node_id].value is None:

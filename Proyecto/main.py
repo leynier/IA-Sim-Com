@@ -31,7 +31,7 @@ def compilation():
     print("\nCOMPILACION:\n")
     tokenizer = Tokenizer()
     file = "console"
-    text = open(path[0]+"/codes/PruebaTipos.pys").read()
+    text = open(f'{path[0]}/codes/PruebaTipos.pys').read()
     tokens, error = tokenizer.tokenize(file, text)
     if error is not None:
         print(error)
@@ -73,10 +73,7 @@ def simulation(agents_lists):
                 bike = Bike(agents_lists[1][i].varsforBikes[0][2], agents_lists[1][i].varsforBikes[1][2],
                             agents_lists[1][i].varsforBikes[2][2], agents_lists[1][i].varsforBikes[3][2],
                             agents_lists[1][i].varsforBikes[4][2], agents_lists[1][i])
-                if len(agents_lists[1][i].funciones) == 0:
-                    flag_configuration = False
-                else:
-                    flag_configuration = True
+                flag_configuration = len(agents_lists[1][i].funciones) != 0
             else:
                 d = Ducati()
                 bike = Bike(d.brand, d.max_speed, d.weight, None)
@@ -102,10 +99,7 @@ def simulation(agents_lists):
                 bike = Bike(agents_lists[1][0].varsforBikes[0][2], agents_lists[1][0].varsforBikes[1][2],
                             agents_lists[1][0].varsforBikes[2][2], agents_lists[1][0],
                             agents_lists[1][0].varsforBikes[3][2], agents_lists[1][0].varsforBikes[4][2])
-                if len(agents_lists[1][0].funciones) == 0:
-                    flag_configuration = False
-                else:
-                    flag_configuration = True
+                flag_configuration = len(agents_lists[1][0].funciones) != 0
             else:
                 d = Ducati()
                 bike = Bike(d.brand, d.max_speed, d.weight, None)
@@ -129,13 +123,13 @@ def simulation(agents_lists):
         rider = Rider(b.name, b.cornering, b.step_by_line)
         bike = Bike(d.brand, d.max_speed, d.weight, None)
         agents.append(Agent(rider, bike, False, False, False))
-        
+
         m = Mir()
         s = Suzuki()
         rider = Rider(m.name, m.cornering, m.step_by_line)
         bike = Bike(s.brand, s.max_speed, s.weight, None)
         agents.append(Agent(rider, bike, False, False, False))
-        
+
         e = Espargaro()
         a = Aprilia()
         rider = Rider(e.name, e.cornering, e.step_by_line)
@@ -159,15 +153,14 @@ def simulation(agents_lists):
         rider = Rider(bi.name, bi.cornering, bi.step_by_line)
         bike = Bike(k.brand, k.max_speed, k.weight, None)
         agents.append(Agent(rider, bike, False, False, False))
-        
+
     race = Race(environment, agents, 5)
     s = Simulator()
     s.start(race)
 
 
 def main():
-    comp = compilation()
-    if comp:
+    if comp := compilation():
         print("OK")
         simulation(comp)
 
